@@ -1,9 +1,13 @@
 # TODO - Future Features & Improvements
+# Recently completed
+  - [x] **Edit Budgets**: Add edit functionality for budgets
+   - [x] **Monthly Transaction View**: Filter transactions by month
+   - [x] **Dashboard Month Filter**: View dashboard data by specific month
 
 ## 🔥 High Priority
 
 ### Core Functionality
-- [ ] **Delete Budgets**: Add ability to remove budgets (currently can only add)
+- [x] **Delete Budgets**: Add ability to remove budgets (currently can only add)
 - [ ] **Edit Transactions**: Allow editing existing transactions (currently can only delete)
 - [ ] **Recurring Income**: Track regular income like paychecks
   - Frequency options (Weekly, Bi-weekly, Monthly, etc.)
