@@ -2,6 +2,12 @@
 
 All notable changes to the Budget Tracker project will be documented in this file.
 
+ ## [3.1.1] - 2025-10-20
+
+   ### Fixed
+   - Fixed import data functionality - resolved "monthly.toFixed is not a function" error
+   - getMonthlyAmount now correctly returns a number instead of a string
+
 ## [3.1.0] - 2025-10-20
 
 ### Added
