@@ -2,6 +2,24 @@
 
 All notable changes to the Budget Tracker project will be documented in this file.
 
+## [3.1.0] - 2025-10-20
+
+### Added
+- **Monthly Transaction Filtering**: View transactions by specific month with dropdown selector
+- **Dashboard Month Filter**: Dashboard now defaults to current month with month selector dropdown
+- **Monthly Totals**: Income, expenses, and balance calculated for selected month
+- **Budget Edit & Delete**: Added edit and delete functionality for budgets with confirmation
+- **Month-Filtered Analytics**: Category spending and budget progress now filter by selected month
+
+### Changed
+- Dashboard now shows current month by default instead of all-time totals
+- All dashboard calculations (income, expenses, spending, budgets) now filter by selected month
+- Month selector automatically includes current month even with no transactions
+
+### Fixed
+- Dashboard props updated to properly pass transactions data
+- Month filtering now works correctly across all dashboard components
+
 ## [3.0.0] - 2025-10-19
 
 ### Major Restructure
