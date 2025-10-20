@@ -140,9 +140,9 @@ function BudgetTracker() {
     };
 
     const getMonthlyAmount = (amount, frequency) => {
-        const multipliers = { 'Monthly': 1, 'Quarterly': 1/3, 'Semi-Annual': 1/6, 'Annual': 1/12 };
-        return (parseFloat(amount) * (multipliers[frequency] || 1)).toFixed(2);
-    };
+       const frequencyMap = { 'Monthly': 1, 'Quarterly': 3, 'Semi-Annual': 6, 'Annual': 12 };
+       return parseFloat(amount) / (frequencyMap[frequency] || 1);
+   };
 
     const getSavedAmount = (item) => {
         if (!item.savingsLog || item.savingsLog.length === 0) return 0;
