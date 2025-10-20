@@ -3,6 +3,18 @@
 function Transactions({ transactions, onAdd, onDelete }) {
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedMonth, setSelectedMonth] = useState('all');
+    
+    // Get unique months from transactions
+    const getAvailableMonths = () => {
+        const months = transactions.map(t => {
+            const date = new Date(t.date);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        });
+        return [...new Set(months)].sort().reverse();
+    };
+    
+    const availableMonths = getAvailableMonths();
     
     const filteredTransactions = transactions
         .filter(t => filter === 'all' || t.type === filter)
@@ -10,7 +22,22 @@ function Transactions({ transactions, onAdd, onDelete }) {
             t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
             t.category.toLowerCase().includes(searchTerm.toLowerCase())
         )
+        .filter(t => {
+            if (selectedMonth === 'all') return true;
+            const date = new Date(t.date);
+            const transactionMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            return transactionMonth === selectedMonth;
+        })
         .sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Calculate monthly totals
+    const monthlyIncome = filteredTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    const monthlyExpenses = filteredTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
     return (
         <div className="space-y-4">
@@ -30,17 +57,53 @@ function Transactions({ transactions, onAdd, onDelete }) {
                     onChange={(e) => setSearchTerm(e.target.value)} 
                     className="w-full px-4 py-2 border rounded" 
                 />
-                <div className="flex gap-2">
-                    {['all', 'income', 'expense'].map(f => (
-                        <button 
-                            key={f} 
-                            onClick={() => setFilter(f)} 
-                            className={`px-4 py-2 rounded ${filter === f ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-                        >
-                            {f.charAt(0).toUpperCase() + f.slice(1)}
-                        </button>
-                    ))}
+                
+                <div className="flex flex-wrap gap-2">
+                    <div className="flex gap-2">
+                        {['all', 'income', 'expense'].map(f => (
+                            <button 
+                                key={f} 
+                                onClick={() => setFilter(f)} 
+                                className={`px-4 py-2 rounded ${filter === f ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                            >
+                                {f.charAt(0).toUpperCase() + f.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+                    
+                    <select 
+                        value={selectedMonth} 
+                        onChange={(e) => setSelectedMonth(e.target.value)}
+                        className="px-4 py-2 border rounded"
+                    >
+                        <option value="all">All Months</option>
+                        {availableMonths.map(month => {
+                            const [year, monthNum] = month.split('-');
+                            const date = new Date(year, monthNum - 1);
+                            const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                            return <option key={month} value={month}>{monthName}</option>;
+                        })}
+                    </select>
                 </div>
+                
+                {selectedMonth !== 'all' && (
+                    <div className="flex gap-4 pt-3 border-t">
+                        <div className="flex-1 text-center">
+                            <p className="text-sm text-gray-600">Income</p>
+                            <p className="text-lg font-bold text-green-600">+${monthlyIncome.toFixed(2)}</p>
+                        </div>
+                        <div className="flex-1 text-center">
+                            <p className="text-sm text-gray-600">Expenses</p>
+                            <p className="text-lg font-bold text-red-600">-${monthlyExpenses.toFixed(2)}</p>
+                        </div>
+                        <div className="flex-1 text-center">
+                            <p className="text-sm text-gray-600">Net</p>
+                            <p className={`text-lg font-bold ${monthlyIncome - monthlyExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ${(monthlyIncome - monthlyExpenses).toFixed(2)}
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
             
             <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -100,35 +163,43 @@ function Subscriptions({ subscriptions, onAdd, onEdit, onDelete, onToggleFlag, g
                             const saved = needsSavings ? getSavedAmount(sub) : 0;
 
                             return (
-                                <div key={sub.id} className={`p-4 ${sub.flaggedForCancellation ? 'bg-red-50' : 'hover:bg-gray-50'}`}>
+                                <div key={sub.id} className={`p-4 ${sub.flaggedForCancellation ? 'bg-orange-50 border-l-4 border-orange-500' : ''}`}>
                                     <div className="flex justify-between items-start">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <p className="font-medium text-lg">{sub.name}</p>
+                                                <h3 className="font-bold text-lg">{sub.name}</h3>
                                                 {sub.flaggedForCancellation && (
-                                                    <span className="px-2 py-1 text-xs bg-red-600 text-white rounded">To Cancel</span>
+                                                    <span className="px-2 py-1 text-xs bg-orange-500 text-white rounded">Flagged</span>
                                                 )}
                                             </div>
-                                            <p className="text-sm text-gray-600">
-                                                ${parseFloat(sub.amount).toFixed(2)} {frequency}
-                                                {frequency !== 'Monthly' && ` ($${monthly.toFixed(2)}/mo)`}
-                                            </p>
-                                            <p className="text-sm text-gray-600">Next payment: {new Date(sub.nextPayment).toLocaleDateString()}</p>
-                                            <p className="text-sm text-gray-600">From: {sub.source}</p>
-                                            {needsSavings && (
-                                                <p className="text-sm font-medium text-blue-600 mt-1">
-                                                    Saved: ${saved.toFixed(2)} / ${parseFloat(sub.amount).toFixed(2)}
-                                                </p>
-                                            )}
+                                            <p className="text-gray-600">{sub.category}</p>
+                                            <p className="text-sm text-gray-500">Source: {sub.source}</p>
+                                            <p className="text-sm text-gray-500">Next payment: {new Date(sub.nextPayment).toLocaleDateString()}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-xl font-bold text-red-600">${monthly.toFixed(2)}/mo</p>
-                                            <p className="text-sm text-gray-500">${(monthly * 12).toFixed(2)}/year</p>
+                                            <p className="text-2xl font-bold text-blue-600">${sub.amount}</p>
+                                            <p className="text-sm text-gray-600">{frequency}</p>
+                                            {frequency !== 'Monthly' && (
+                                                <p className="text-xs text-gray-500">${monthly}/mo</p>
+                                            )}
                                         </div>
                                     </div>
                                     
                                     {needsSavings && (
                                         <div className="mt-3 pt-3 border-t">
+                                            <div className="flex justify-between text-sm mb-2">
+                                                <span>Saved for next payment:</span>
+                                                <span className="font-bold">${saved.toFixed(2)} / ${sub.amount}</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                                <div 
+                                                    className={`h-3 rounded-full transition-all ${
+                                                        saved >= parseFloat(sub.amount) ? 'bg-green-500' : 
+                                                        saved >= parseFloat(sub.amount) * 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                                                    }`}
+                                                    style={{ width: `${Math.min((saved / parseFloat(sub.amount)) * 100, 100)}%` }}
+                                                />
+                                            </div>
                                             <SavingsActions 
                                                 item={sub} 
                                                 monthly={monthly} 
@@ -168,7 +239,7 @@ function Bills({ bills, onAdd, onEdit, onDelete, onToggleFlag, getMonthlyAmount,
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Recurring Bills</h2>
+                <h2 className="text-2xl font-bold">Bills</h2>
                 <button onClick={onAdd} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                     <PlusCircle size={20} />
                     Add Bill
@@ -177,7 +248,7 @@ function Bills({ bills, onAdd, onEdit, onDelete, onToggleFlag, getMonthlyAmount,
             
             <div className="bg-white rounded-lg shadow overflow-hidden">
                 {bills.length === 0 ? (
-                    <p className="p-6 text-center text-gray-500">No recurring bills added yet</p>
+                    <p className="p-6 text-center text-gray-500">No bills added yet</p>
                 ) : (
                     <div className="divide-y">
                         {bills.map(bill => {
@@ -187,35 +258,43 @@ function Bills({ bills, onAdd, onEdit, onDelete, onToggleFlag, getMonthlyAmount,
                             const saved = needsSavings ? getSavedAmount(bill) : 0;
 
                             return (
-                                <div key={bill.id} className={`p-4 ${bill.flaggedForReview ? 'bg-yellow-50' : 'hover:bg-gray-50'}`}>
+                                <div key={bill.id} className={`p-4 ${bill.flaggedForReview ? 'bg-yellow-50 border-l-4 border-yellow-500' : ''}`}>
                                     <div className="flex justify-between items-start">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <p className="font-medium text-lg">{bill.name}</p>
+                                                <h3 className="font-bold text-lg">{bill.name}</h3>
                                                 {bill.flaggedForReview && (
-                                                    <span className="px-2 py-1 text-xs bg-yellow-600 text-white rounded">Review</span>
+                                                    <span className="px-2 py-1 text-xs bg-yellow-500 text-white rounded">Flagged</span>
                                                 )}
                                             </div>
-                                            <p className="text-sm text-gray-600">
-                                                ${parseFloat(bill.amount).toFixed(2)} {frequency}
-                                                {frequency !== 'Monthly' && ` ($${monthly.toFixed(2)}/mo)`}
-                                            </p>
-                                            <p className="text-sm text-gray-600">Next payment: {new Date(bill.nextPayment).toLocaleDateString()}</p>
-                                            <p className="text-sm text-gray-600">From: {bill.source}</p>
-                                            {needsSavings && (
-                                                <p className="text-sm font-medium text-blue-600 mt-1">
-                                                    Saved: ${saved.toFixed(2)} / ${parseFloat(bill.amount).toFixed(2)}
-                                                </p>
-                                            )}
+                                            <p className="text-gray-600">{bill.category}</p>
+                                            <p className="text-sm text-gray-500">Source: {bill.source}</p>
+                                            <p className="text-sm text-gray-500">Next payment: {new Date(bill.nextPayment).toLocaleDateString()}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-xl font-bold text-red-600">${monthly.toFixed(2)}/mo</p>
-                                            <p className="text-sm text-gray-500">${(monthly * 12).toFixed(2)}/year</p>
+                                            <p className="text-2xl font-bold text-purple-600">${bill.amount}</p>
+                                            <p className="text-sm text-gray-600">{frequency}</p>
+                                            {frequency !== 'Monthly' && (
+                                                <p className="text-xs text-gray-500">${monthly}/mo</p>
+                                            )}
                                         </div>
                                     </div>
                                     
                                     {needsSavings && (
                                         <div className="mt-3 pt-3 border-t">
+                                            <div className="flex justify-between text-sm mb-2">
+                                                <span>Saved for next payment:</span>
+                                                <span className="font-bold">${saved.toFixed(2)} / ${bill.amount}</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                                <div 
+                                                    className={`h-3 rounded-full transition-all ${
+                                                        saved >= parseFloat(bill.amount) ? 'bg-green-500' : 
+                                                        saved >= parseFloat(bill.amount) * 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                                                    }`}
+                                                    style={{ width: `${Math.min((saved / parseFloat(bill.amount)) * 100, 100)}%` }}
+                                                />
+                                            </div>
                                             <SavingsActions 
                                                 item={bill} 
                                                 monthly={monthly} 
@@ -251,7 +330,7 @@ function Bills({ bills, onAdd, onEdit, onDelete, onToggleFlag, getMonthlyAmount,
     );
 }
 
-function Budgets({ budgets, onAdd, getCategorySpending }) {
+function Budgets({ budgets, onAdd, onEdit, onDelete, getCategorySpending }) {
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -286,13 +365,23 @@ function Budgets({ budgets, onAdd, getCategorySpending }) {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-4">
+                                    <div className="w-full bg-gray-200 rounded-full h-4 mb-3">
                                         <div 
                                             className={`h-4 rounded-full transition-all ${percentage > 100 ? 'bg-red-500' : percentage > 80 ? 'bg-orange-500' : 'bg-green-500'}`} 
                                             style={{ width: `${Math.min(percentage, 100)}%` }} 
                                         />
                                     </div>
-                                    <p className="text-xs text-gray-600 mt-1">{percentage.toFixed(1)}% used</p>
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-xs text-gray-600">{percentage.toFixed(1)}% used</p>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => onEdit(budget)} className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+                                                Edit
+                                            </button>
+                                            <button onClick={() => onDelete(budget.id)} className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             );
                         })}
