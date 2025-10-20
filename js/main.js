@@ -13,6 +13,7 @@ function BudgetTracker() {
     const [showAddBudget, setShowAddBudget] = useState(false);
     const [editingSubscription, setEditingSubscription] = useState(null);
     const [editingBill, setEditingBill] = useState(null);
+    const [editingBudget, setEditingBudget] = useState(null);
 
     useEffect(() => {
         const saved = localStorage.getItem('budgetData');
@@ -75,6 +76,18 @@ function BudgetTracker() {
         ));
         setEditingBill(null);
     };
+ const updateBudget = (id, updatedData) => {
+       setBudgets(budgets.map(b => 
+           b.id === id ? { ...b, ...updatedData } : b
+       ));
+       setEditingBudget(null);
+   };
+
+   const deleteBudget = (id) => {
+       if (confirm('Are you sure you want to delete this budget?')) {
+           setBudgets(budgets.filter(b => b.id !== id));
+       }
+   };
 
     const deleteTransaction = (id) => setTransactions(transactions.filter(t => t.id !== id));
     const deleteSubscription = (id) => setSubscriptions(subscriptions.filter(s => s.id !== id));
@@ -264,12 +277,14 @@ function BudgetTracker() {
                     />
                 )}
                 {activeTab === 'budgets' && (
-                    <Budgets 
-                        budgets={budgets} 
-                        onAdd={() => setShowAddBudget(true)} 
-                        getCategorySpending={getCategorySpending} 
-                    />
-                )}
+       <Budgets 
+           budgets={budgets} 
+           onAdd={() => setShowAddBudget(true)} 
+           onEdit={(budget) => setEditingBudget(budget)}
+           onDelete={deleteBudget}
+           getCategorySpending={getCategorySpending} 
+       />
+   )}
             </div>
 
             {showAddTransaction && <AddTransactionModal onClose={() => setShowAddTransaction(false)} onAdd={addTransaction} />}
@@ -278,6 +293,13 @@ function BudgetTracker() {
             {showAddBudget && <AddBudgetModal onClose={() => setShowAddBudget(false)} onAdd={addBudget} />}
             {editingSubscription && <EditSubscriptionModal subscription={editingSubscription} onClose={() => setEditingSubscription(null)} onUpdate={updateSubscription} />}
             {editingBill && <EditBillModal bill={editingBill} onClose={() => setEditingBill(null)} onUpdate={updateBill} />}
+ {editingBudget && (
+        <EditBudgetModal 
+            budget={editingBudget} 
+            onClose={() => setEditingBudget(null)} 
+            onUpdate={updateBudget} 
+        />
+    )}
         </div>
     );
 }
