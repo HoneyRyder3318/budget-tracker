@@ -13,6 +13,7 @@ A comprehensive personal finance management web application built with React.
 
 ### Key Features
 - 📊 **Spending by Category Graph**: Visual breakdown of where your money goes
+- 📅 **Monthly Filtering**: View dashboard and transactions by specific month
 - 💰 **Savings Management**: Track progress toward non-monthly payments
 - 🔔 **Upcoming Payments Alert**: See bills/subscriptions due in the next 7 days
 - 📈 **Dashboard Overview**: Income, expenses, balance, and recurring payment summaries
@@ -181,6 +182,6 @@ Created with assistance from Claude (Anthropic)
 
 ---
 
-**Version**: 3.0  
+**Version**: 3.1.0
 **Last Updated**: October 2025  
 **Status**: Active Development
