@@ -1,8 +1,88 @@
-// Dashboard component with all summary views
+// Dashboard component with all summary views and month filtering
 
-function Dashboard({ totals, subscriptions, bills, budgets, savingsBalance, setSavingsBalance, getCategorySpending, getAllCategorySpending, exportData, importData, getMonthlyAmount, getSavedAmount, addSavingsPayment, adjustSavings }) {
+function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance, setSavingsBalance, getCategorySpending, exportData, importData, getMonthlyAmount, getSavedAmount, addSavingsPayment, adjustSavings }) {
     const [editingSavings, setEditingSavings] = useState(false);
     const [tempSavings, setTempSavings] = useState(savingsBalance);
+    
+    // Get current month as default
+    const getCurrentMonth = () => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    };
+    
+    const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+    
+    // Get unique months from transactions
+    const getAvailableMonths = () => {
+        const months = transactions.map(t => {
+            const date = new Date(t.date);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        });
+        const uniqueMonths = [...new Set(months)].sort().reverse();
+        
+        // Always include current month even if no transactions
+        const currentMonth = getCurrentMonth();
+        if (!uniqueMonths.includes(currentMonth)) {
+            uniqueMonths.unshift(currentMonth);
+        }
+        
+        return uniqueMonths;
+    };
+    
+    const availableMonths = getAvailableMonths();
+    
+    // Filter transactions by selected month
+    const filteredTransactions = transactions.filter(t => {
+        const date = new Date(t.date);
+        const transactionMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        return transactionMonth === selectedMonth;
+    });
+    
+    // Calculate totals for selected month
+    const monthlyIncome = filteredTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    const monthlyExpenses = filteredTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    const monthlyBalance = monthlyIncome - monthlyExpenses;
+    
+    // Category spending for selected month
+    const getCategorySpendingForMonth = (category) => {
+        const transactionSpending = filteredTransactions
+            .filter(t => t.type === 'expense' && t.category === category)
+            .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+        
+        // Add monthly portion of subscriptions and bills
+        const subscriptionSpending = subscriptions
+            .filter(s => s.category === category)
+            .reduce((sum, s) => sum + parseFloat(getMonthlyAmount(s.amount, s.frequency)), 0);
+        
+        const billSpending = bills
+            .filter(b => b.category === category)
+            .reduce((sum, b) => sum + parseFloat(getMonthlyAmount(b.amount, b.frequency)), 0);
+        
+        return transactionSpending + subscriptionSpending + billSpending;
+    };
+    
+    const getAllCategorySpendingForMonth = () => {
+        const categories = {};
+        
+        // Get all categories from transactions, subscriptions, and bills
+        const allCategories = new Set([
+            ...filteredTransactions.filter(t => t.type === 'expense').map(t => t.category),
+            ...subscriptions.map(s => s.category),
+            ...bills.map(b => b.category)
+        ]);
+        
+        allCategories.forEach(category => {
+            categories[category] = getCategorySpendingForMonth(category);
+        });
+        
+        return categories;
+    };
 
     const allRecurring = [...subscriptions, ...bills];
     const upcomingPayments = allRecurring
@@ -13,26 +93,55 @@ function Dashboard({ totals, subscriptions, bills, budgets, savingsBalance, setS
         .filter(item => item.daysUntil >= 0 && item.daysUntil <= 7)
         .sort((a, b) => a.daysUntil - b.daysUntil);
     
-    const totalSubscriptionCost = subscriptions.reduce((sum, sub) => sum + getMonthlyAmount(sub.amount, sub.frequency || 'Monthly'), 0);
-    const totalBillsCost = bills.reduce((sum, bill) => sum + getMonthlyAmount(bill.amount, bill.frequency || 'Monthly'), 0);
+    const totalSubscriptionCost = subscriptions.reduce((sum, sub) => sum + parseFloat(getMonthlyAmount(sub.amount, sub.frequency || 'Monthly')), 0);
+    const totalBillsCost = bills.reduce((sum, bill) => sum + parseFloat(getMonthlyAmount(bill.amount, bill.frequency || 'Monthly')), 0);
     const totalRecurringCost = totalSubscriptionCost + totalBillsCost;
 
     const savingsItems = allRecurring.filter(item => (item.frequency || 'Monthly') !== 'Monthly');
     const totalNeededSavings = savingsItems.reduce((sum, item) => sum + parseFloat(item.amount), 0);
     const totalSaved = savingsItems.reduce((sum, item) => sum + getSavedAmount(item), 0);
 
-    const categorySpending = getAllCategorySpending();
+    const categorySpending = getAllCategorySpendingForMonth();
     const sortedCategories = Object.entries(categorySpending).sort((a, b) => b[1] - a[1]);
     const maxSpending = sortedCategories.length > 0 ? sortedCategories[0][1] : 0;
+    
+    // Format month for display
+    const formatMonthDisplay = (monthStr) => {
+        const [year, month] = monthStr.split('-');
+        const date = new Date(year, month - 1);
+        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    };
 
     return (
         <div className="space-y-6">
+            {/* Month Selector */}
+            <div className="bg-white p-4 rounded-lg shadow">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold">Dashboard</h2>
+                    <div className="flex items-center gap-3">
+                        <label className="text-sm font-medium text-gray-600">Viewing:</label>
+                        <select 
+                            value={selectedMonth} 
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            className="px-4 py-2 border rounded-lg font-medium"
+                        >
+                            {availableMonths.map(month => (
+                                <option key={month} value={month}>
+                                    {formatMonthDisplay(month)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white p-6 rounded-lg shadow">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-600 text-sm">Total Income</p>
-                            <p className="text-2xl font-bold text-green-600">${totals.income.toFixed(2)}</p>
+                            <p className="text-gray-600 text-sm">Income ({formatMonthDisplay(selectedMonth)})</p>
+                            <p className="text-2xl font-bold text-green-600">${monthlyIncome.toFixed(2)}</p>
                         </div>
                         <TrendingUp className="text-green-600" size={32} />
                     </div>
@@ -41,8 +150,8 @@ function Dashboard({ totals, subscriptions, bills, budgets, savingsBalance, setS
                 <div className="bg-white p-6 rounded-lg shadow">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-600 text-sm">Total Expenses</p>
-                            <p className="text-2xl font-bold text-red-600">${totals.expenses.toFixed(2)}</p>
+                            <p className="text-gray-600 text-sm">Expenses ({formatMonthDisplay(selectedMonth)})</p>
+                            <p className="text-2xl font-bold text-red-600">${monthlyExpenses.toFixed(2)}</p>
                         </div>
                         <TrendingDown className="text-red-600" size={32} />
                     </div>
@@ -51,83 +160,78 @@ function Dashboard({ totals, subscriptions, bills, budgets, savingsBalance, setS
                 <div className="bg-white p-6 rounded-lg shadow">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-600 text-sm">Balance</p>
-                            <p className={`text-2xl font-bold ${totals.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                                ${totals.balance.toFixed(2)}
+                            <p className="text-gray-600 text-sm">Balance ({formatMonthDisplay(selectedMonth)})</p>
+                            <p className={`text-2xl font-bold ${monthlyBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ${monthlyBalance.toFixed(2)}
                             </p>
                         </div>
-                        <DollarSign className="text-blue-600" size={32} />
+                        <DollarSign className={monthlyBalance >= 0 ? 'text-green-600' : 'text-red-600'} size={32} />
                     </div>
                 </div>
             </div>
 
+            {/* Recurring Payments Summary */}
             <div className="bg-white p-6 rounded-lg shadow">
-                <h2 className="text-xl font-bold mb-4">Recurring Payments Summary</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <h2 className="text-xl font-bold mb-4">Recurring Payments</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <p className="text-gray-600">Subscriptions</p>
-                        <p className="text-2xl font-bold">{subscriptions.length}</p>
-                        <p className="text-sm text-red-600">${totalSubscriptionCost.toFixed(2)}/mo</p>
+                        <p className="text-gray-600">Monthly Total</p>
+                        <p className="text-2xl font-bold text-purple-600">${totalRecurringCost.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">{subscriptions.length} subscriptions + {bills.length} bills</p>
                     </div>
                     <div>
-                        <p className="text-gray-600">Bills</p>
-                        <p className="text-2xl font-bold">{bills.length}</p>
-                        <p className="text-sm text-red-600">${totalBillsCost.toFixed(2)}/mo</p>
-                    </div>
-                    <div>
-                        <p className="text-gray-600">Total Monthly</p>
-                        <p className="text-3xl font-bold text-red-600">${totalRecurringCost.toFixed(2)}</p>
-                        <p className="text-sm text-gray-500">Yearly: ${(totalRecurringCost * 12).toFixed(2)}</p>
+                        <p className="text-gray-600">Yearly Total</p>
+                        <p className="text-2xl font-bold text-purple-600">${(totalRecurringCost * 12).toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">Estimated annual cost</p>
                     </div>
                 </div>
             </div>
 
+            {/* Upcoming Payments */}
             {upcomingPayments.length > 0 && (
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <div className="flex items-center gap-2 mb-4">
-                        <AlertCircle className="text-orange-500" size={24} />
-                        <h2 className="text-xl font-bold">Upcoming Payments (Next 7 Days)</h2>
-                    </div>
-                    <div className="space-y-3">
-                        {upcomingPayments.map(payment => (
-                            <div key={payment.id} className="flex justify-between items-center p-3 bg-orange-50 rounded border-l-4 border-orange-500">
-                                <div>
-                                    <p className="font-medium">{payment.name}</p>
-                                    <p className="text-sm text-gray-600">{new Date(payment.nextPayment).toLocaleDateString()}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="font-bold text-orange-600">${payment.amount}</p>
-                                    <p className="text-xs text-gray-600">{payment.daysUntil === 0 ? 'Today' : `${payment.daysUntil} days`}</p>
-                                </div>
+                <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+                    <div className="flex items-start">
+                        <AlertCircle className="text-orange-500 mr-3 flex-shrink-0" size={24} />
+                        <div className="flex-1">
+                            <h3 className="font-bold text-orange-800">Upcoming Payments (Next 7 Days)</h3>
+                            <div className="mt-2 space-y-2">
+                                {upcomingPayments.map(item => (
+                                    <div key={item.id} className="flex justify-between text-sm">
+                                        <span>{item.name || item.description}</span>
+                                        <span className="font-medium">
+                                            ${item.amount} - {item.daysUntil === 0 ? 'Today' : `in ${item.daysUntil} day${item.daysUntil > 1 ? 's' : ''}`}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        </div>
                     </div>
                 </div>
             )}
 
+            {/* Spending by Category */}
             {sortedCategories.length > 0 && (
                 <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-xl font-bold mb-4">Spending by Category</h2>
+                    <h2 className="text-xl font-bold mb-4">Spending by Category ({formatMonthDisplay(selectedMonth)})</h2>
                     <div className="space-y-3">
                         {sortedCategories.map(([category, amount]) => {
                             const percentage = maxSpending > 0 ? (amount / maxSpending) * 100 : 0;
+                            const totalSpending = sortedCategories.reduce((sum, [, amt]) => sum + amt, 0);
+                            const categoryPercentage = totalSpending > 0 ? (amount / totalSpending) * 100 : 0;
+                            
                             return (
                                 <div key={category}>
                                     <div className="flex justify-between mb-1">
                                         <span className="font-medium">{category}</span>
-                                        <span className="text-sm font-bold">${amount.toFixed(2)}</span>
+                                        <span className="text-sm text-gray-600">
+                                            ${amount.toFixed(2)} ({categoryPercentage.toFixed(1)}%)
+                                        </span>
                                     </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-8">
+                                    <div className="w-full bg-gray-200 rounded-full h-3">
                                         <div 
-                                            className="h-8 rounded-full bg-blue-500 flex items-center justify-end pr-2" 
+                                            className="bg-blue-600 h-3 rounded-full transition-all" 
                                             style={{ width: `${percentage}%` }}
-                                        >
-                                            {percentage > 15 && (
-                                                <span className="text-white text-xs font-medium">
-                                                    {((amount / sortedCategories.reduce((sum, [, amt]) => sum + amt, 0)) * 100).toFixed(0)}%
-                                                </span>
-                                            )}
-                                        </div>
+                                        />
                                     </div>
                                 </div>
                             );
@@ -144,6 +248,7 @@ function Dashboard({ totals, subscriptions, bills, budgets, savingsBalance, setS
                 </div>
             )}
 
+            {/* Savings Tracker */}
             {savingsItems.length > 0 && (
                 <SavingsTracker 
                     savingsItems={savingsItems}
@@ -163,12 +268,13 @@ function Dashboard({ totals, subscriptions, bills, budgets, savingsBalance, setS
                 />
             )}
 
+            {/* Budget Overview */}
             {budgets.length > 0 && (
                 <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-xl font-bold mb-4">Budget Overview</h2>
+                    <h2 className="text-xl font-bold mb-4">Budget Overview ({formatMonthDisplay(selectedMonth)})</h2>
                     <div className="space-y-4">
                         {budgets.map(budget => {
-                            const spent = getCategorySpending(budget.category);
+                            const spent = getCategorySpendingForMonth(budget.category);
                             const percentage = (spent / budget.limit) * 100;
                             return (
                                 <div key={budget.id}>
@@ -182,6 +288,7 @@ function Dashboard({ totals, subscriptions, bills, budgets, savingsBalance, setS
                                             style={{ width: `${Math.min(percentage, 100)}%` }} 
                                         />
                                     </div>
+                                    <p className="text-xs text-gray-600 mt-1">{percentage.toFixed(1)}% used</p>
                                 </div>
                             );
                         })}
@@ -189,9 +296,10 @@ function Dashboard({ totals, subscriptions, bills, budgets, savingsBalance, setS
                 </div>
             )}
 
+            {/* Data Management */}
             <div className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-xl font-bold mb-4">Data Management</h2>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex gap-4">
                     <button onClick={exportData} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                         <Download size={20} />
                         Export Data
@@ -202,7 +310,7 @@ function Dashboard({ totals, subscriptions, bills, budgets, savingsBalance, setS
                         <input type="file" accept=".json" onChange={importData} className="hidden" />
                     </label>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">Export your data to backup or transfer between devices</p>
+                <p className="text-sm text-gray-600 mt-2">Export your data regularly to keep backups!</p>
             </div>
         </div>
     );
