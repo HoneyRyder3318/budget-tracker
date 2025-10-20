@@ -5,8 +5,8 @@
 ## 📋 Current Status
 
 - **Project**: Budget Tracker - Personal Finance Web App
-- **Current Version**: 3.0.0
-- **Last Updated**: 2025-10-19
+- **Current Version**: 3.1.0
+   - **Last Updated**: 2025-10-20
 - **Status**: Active Development
 - **Live URL**: https://honeyryder3318.github.io/budget-tracker/
 
