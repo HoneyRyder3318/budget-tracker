@@ -76,22 +76,23 @@ function BudgetTracker() {
         ));
         setEditingBill(null);
     };
- const updateBudget = (id, updatedData) => {
-       setBudgets(budgets.map(b => 
-           b.id === id ? { ...b, ...updatedData } : b
-       ));
-       setEditingBudget(null);
-   };
 
-   const deleteBudget = (id) => {
-       if (confirm('Are you sure you want to delete this budget?')) {
-           setBudgets(budgets.filter(b => b.id !== id));
-       }
-   };
+    const updateBudget = (id, updatedData) => {
+        setBudgets(budgets.map(b => 
+            b.id === id ? { ...b, ...updatedData } : b
+        ));
+        setEditingBudget(null);
+    };
 
     const deleteTransaction = (id) => setTransactions(transactions.filter(t => t.id !== id));
     const deleteSubscription = (id) => setSubscriptions(subscriptions.filter(s => s.id !== id));
     const deleteBill = (id) => setBills(bills.filter(b => b.id !== id));
+    
+    const deleteBudget = (id) => {
+        if (confirm('Are you sure you want to delete this budget?')) {
+            setBudgets(budgets.filter(b => b.id !== id));
+        }
+    };
 
     const toggleSubscriptionFlag = (id) => {
         setSubscriptions(subscriptions.map(s => 
@@ -138,85 +139,76 @@ function BudgetTracker() {
         }
     };
 
-    const exportData = () => {
-        const data = { transactions, subscriptions, bills, budgets, savingsBalance, exportDate: new Date().toISOString() };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'budget-backup.json';
-        a.click();
+    const getMonthlyAmount = (amount, frequency) => {
+        const multipliers = { 'Monthly': 1, 'Quarterly': 1/3, 'Semi-Annual': 1/6, 'Annual': 1/12 };
+        return (parseFloat(amount) * (multipliers[frequency] || 1)).toFixed(2);
     };
 
-    const importData = (e) => {
-        const file = e.target.files[0];
+    const getSavedAmount = (item) => {
+        if (!item.savingsLog || item.savingsLog.length === 0) return 0;
+        return item.savingsLog.reduce((sum, log) => sum + log.amount, 0);
+    };
+
+    const getCategorySpending = (category) => {
+        const transactionSpending = transactions
+            .filter(t => t.type === 'expense' && t.category === category)
+            .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+        
+        const subscriptionSpending = subscriptions
+            .filter(s => s.category === category)
+            .reduce((sum, s) => sum + parseFloat(getMonthlyAmount(s.amount, s.frequency)), 0);
+        
+        const billSpending = bills
+            .filter(b => b.category === category)
+            .reduce((sum, b) => sum + parseFloat(getMonthlyAmount(b.amount, b.frequency)), 0);
+        
+        return transactionSpending + subscriptionSpending + billSpending;
+    };
+
+    const exportData = () => {
+        const dataStr = JSON.stringify({ transactions, subscriptions, bills, budgets, savingsBalance }, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `budget-tracker-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+    };
+
+    const importData = (event) => {
+        const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = (e) => {
                 try {
-                    const data = JSON.parse(event.target.result);
-                    if (data.transactions) setTransactions(data.transactions);
-                    if (data.subscriptions) setSubscriptions(data.subscriptions);
-                    if (data.bills) setBills(data.bills);
-                    if (data.budgets) setBudgets(data.budgets);
-                    if (data.savingsBalance !== undefined) setSavingsBalance(data.savingsBalance);
+                    const data = JSON.parse(e.target.result);
+                    setTransactions(data.transactions || []);
+                    setSubscriptions(data.subscriptions || []);
+                    setBills(data.bills || []);
+                    setBudgets(data.budgets || []);
+                    setSavingsBalance(data.savingsBalance || 0);
                     alert('Data imported successfully!');
                 } catch (error) {
-                    alert('Error importing data');
+                    alert('Error importing data. Please check the file format.');
                 }
             };
             reader.readAsText(file);
         }
     };
 
-    const calculateTotals = () => {
-        const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-        const expenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-        return { income, expenses, balance: income - expenses };
-    };
-
-    const getCategorySpending = (category) => {
-        return transactions.filter(t => t.type === 'expense' && t.category === category).reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    };
-
-    const getAllCategorySpending = () => {
-        const spending = {};
-        
-        transactions.filter(t => t.type === 'expense').forEach(t => {
-            spending[t.category] = (spending[t.category] || 0) + parseFloat(t.amount);
-        });
-        
-        subscriptions.forEach(sub => {
-            const monthly = getMonthlyAmount(sub.amount, sub.frequency || 'Monthly');
-            const category = sub.category || 'Subscriptions';
-            spending[category] = (spending[category] || 0) + monthly;
-        });
-        
-        bills.forEach(bill => {
-            const monthly = getMonthlyAmount(bill.amount, bill.frequency || 'Monthly');
-            const category = bill.category || 'Bills';
-            spending[category] = (spending[category] || 0) + monthly;
-        });
-        
-        return spending;
-    };
-
-    const totals = calculateTotals();
-
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="bg-blue-600 text-white p-4 shadow-lg">
-                <h1 className="text-2xl font-bold">Budget Tracker</h1>
-                <p className="text-blue-100 text-sm">Take control of your finances</p>
+        <div className="min-h-screen bg-gray-100">
+            <div className="bg-blue-600 text-white p-4 shadow-md">
+                <h1 className="text-3xl font-bold">💰 Budget Tracker</h1>
             </div>
-
-            <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
-                <div className="flex overflow-x-auto">
+            
+            <div className="bg-white shadow-sm sticky top-0 z-10">
+                <div className="flex border-b">
                     {['dashboard', 'transactions', 'subscriptions', 'bills', 'budgets'].map(tab => (
                         <button 
                             key={tab} 
                             onClick={() => setActiveTab(tab)} 
-                            className={`px-6 py-3 font-medium whitespace-nowrap ${activeTab === tab ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+                            className={`flex-1 py-3 px-4 font-medium ${activeTab === tab ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                             {tab.charAt(0).toUpperCase() + tab.slice(1)}
                         </button>
@@ -224,21 +216,20 @@ function BudgetTracker() {
                 </div>
             </div>
 
-            <div className="max-w-6xl mx-auto p-4">
+            <div className="container mx-auto p-4 max-w-6xl">
                 {activeTab === 'dashboard' && (
                     <Dashboard 
-                        totals={totals} 
+                        transactions={transactions}
                         subscriptions={subscriptions}
                         bills={bills}
                         budgets={budgets}
                         savingsBalance={savingsBalance}
                         setSavingsBalance={setSavingsBalance}
-                        getCategorySpending={getCategorySpending}
-                        getAllCategorySpending={getAllCategorySpending}
-                        exportData={exportData} 
-                        importData={importData}
                         getMonthlyAmount={getMonthlyAmount}
                         getSavedAmount={getSavedAmount}
+                        getCategorySpending={getCategorySpending}
+                        exportData={exportData}
+                        importData={importData}
                         addSavingsPayment={addSavingsPayment}
                         adjustSavings={adjustSavings}
                     />
@@ -254,7 +245,7 @@ function BudgetTracker() {
                     <Subscriptions 
                         subscriptions={subscriptions} 
                         onAdd={() => setShowAddSubscription(true)} 
-                        onEdit={setEditingSubscription}
+                        onEdit={(sub) => setEditingSubscription(sub)}
                         onDelete={deleteSubscription} 
                         onToggleFlag={toggleSubscriptionFlag}
                         getMonthlyAmount={getMonthlyAmount}
@@ -267,7 +258,7 @@ function BudgetTracker() {
                     <Bills 
                         bills={bills} 
                         onAdd={() => setShowAddBill(true)} 
-                        onEdit={setEditingBill}
+                        onEdit={(bill) => setEditingBill(bill)}
                         onDelete={deleteBill} 
                         onToggleFlag={toggleBillFlag}
                         getMonthlyAmount={getMonthlyAmount}
@@ -277,14 +268,14 @@ function BudgetTracker() {
                     />
                 )}
                 {activeTab === 'budgets' && (
-       <Budgets 
-           budgets={budgets} 
-           onAdd={() => setShowAddBudget(true)} 
-           onEdit={(budget) => setEditingBudget(budget)}
-           onDelete={deleteBudget}
-           getCategorySpending={getCategorySpending} 
-       />
-   )}
+                    <Budgets 
+                        budgets={budgets} 
+                        onAdd={() => setShowAddBudget(true)} 
+                        onEdit={(budget) => setEditingBudget(budget)}
+                        onDelete={deleteBudget}
+                        getCategorySpending={getCategorySpending} 
+                    />
+                )}
             </div>
 
             {showAddTransaction && <AddTransactionModal onClose={() => setShowAddTransaction(false)} onAdd={addTransaction} />}
@@ -293,13 +284,7 @@ function BudgetTracker() {
             {showAddBudget && <AddBudgetModal onClose={() => setShowAddBudget(false)} onAdd={addBudget} />}
             {editingSubscription && <EditSubscriptionModal subscription={editingSubscription} onClose={() => setEditingSubscription(null)} onUpdate={updateSubscription} />}
             {editingBill && <EditBillModal bill={editingBill} onClose={() => setEditingBill(null)} onUpdate={updateBill} />}
- {editingBudget && (
-        <EditBudgetModal 
-            budget={editingBudget} 
-            onClose={() => setEditingBudget(null)} 
-            onUpdate={updateBudget} 
-        />
-    )}
+            {editingBudget && <EditBudgetModal budget={editingBudget} onClose={() => setEditingBudget(null)} onUpdate={updateBudget} />}
         </div>
     );
 }
