@@ -98,7 +98,26 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
     const totalRecurringCost = totalSubscriptionCost + totalBillsCost;
 
     const savingsItems = allRecurring.filter(item => (item.frequency || 'Monthly') !== 'Monthly');
-    const totalNeededSavings = savingsItems.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+    
+    // Calculate what should be saved by now based on time elapsed
+    const calculateShouldHaveSaved = (item) => {
+        const frequency = item.frequency || 'Monthly';
+        const frequencyMonths = { 'Quarterly': 3, 'Semi-Annual': 6, 'Annual': 12 }[frequency] || 12;
+        const monthlyAmount = parseFloat(item.amount) / frequencyMonths;
+        
+        // Calculate months since last payment (assuming last payment was frequencyMonths ago)
+        const nextPaymentDate = new Date(item.nextPayment);
+        const now = new Date();
+        const daysUntilPayment = Math.ceil((nextPaymentDate - now) / (1000 * 60 * 60 * 24));
+        const monthsUntilPayment = daysUntilPayment / 30; // Rough estimate
+        const monthsElapsed = frequencyMonths - monthsUntilPayment;
+        
+        // Should have saved = monthly amount × months elapsed
+        return Math.max(0, monthlyAmount * monthsElapsed);
+    };
+    
+    const totalNeededSavings = savingsItems.reduce((sum, item) => sum + calculateShouldHaveSaved(item), 0);
+    const totalFullAmount = savingsItems.reduce((sum, item) => sum + parseFloat(item.amount), 0);
     const totalSaved = savingsItems.reduce((sum, item) => sum + getSavedAmount(item), 0);
 
     const categorySpending = getAllCategorySpendingForMonth();
@@ -254,6 +273,7 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
                     savingsItems={savingsItems}
                     savingsBalance={savingsBalance}
                     totalNeededSavings={totalNeededSavings}
+                    totalFullAmount={totalFullAmount}
                     totalSaved={totalSaved}
                     editingSavings={editingSavings}
                     setEditingSavings={setEditingSavings}
@@ -315,3 +335,9 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
         </div>
     );
 }
+
+
+
+
+
+
