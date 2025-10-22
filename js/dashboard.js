@@ -99,21 +99,33 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
 
     const savingsItems = allRecurring.filter(item => (item.frequency || 'Monthly') !== 'Monthly');
     
-    // Calculate what should be saved by now based on time elapsed
+    // SIMPLIFIED CALCULATION: What should be saved by now
     const calculateShouldHaveSaved = (item) => {
         const frequency = item.frequency || 'Monthly';
-        const frequencyMonths = { 'Quarterly': 3, 'Semi-Annual': 6, 'Annual': 12 }[frequency] || 12;
-        const monthlyAmount = parseFloat(item.amount) / frequencyMonths;
+        const frequencyMonths = { 'Quarterly': 3, 'Semi-Annual': 6, 'Annual': 12 }[frequency];
+        if (!frequencyMonths) return 0;
         
-        // Calculate months since last payment (assuming last payment was frequencyMonths ago)
+        const monthlyAmount = parseFloat(item.amount) / frequencyMonths;
         const nextPaymentDate = new Date(item.nextPayment);
         const now = new Date();
-        const daysUntilPayment = Math.ceil((nextPaymentDate - now) / (1000 * 60 * 60 * 24));
-        const monthsUntilPayment = daysUntilPayment / 30; // Rough estimate
-        const monthsElapsed = frequencyMonths - monthsUntilPayment;
+        
+        // Days until payment
+        const daysUntil = Math.ceil((nextPaymentDate - now) / (1000 * 60 * 60 * 24));
+        
+        // If payment is overdue or very soon, should have full amount
+        if (daysUntil <= 0) return parseFloat(item.amount);
+        
+        // Convert days to months (rough estimate)
+        const monthsUntil = daysUntil / 30;
+        
+        // Months elapsed in this cycle
+        const monthsElapsed = Math.max(0, frequencyMonths - monthsUntil);
         
         // Should have saved = monthly amount × months elapsed
-        return Math.max(0, monthlyAmount * monthsElapsed);
+        const shouldHave = monthlyAmount * monthsElapsed;
+        
+        // Return at least 0, max the full amount
+        return Math.max(0, Math.min(shouldHave, parseFloat(item.amount)));
     };
     
     const totalNeededSavings = savingsItems.reduce((sum, item) => sum + calculateShouldHaveSaved(item), 0);
