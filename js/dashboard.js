@@ -347,9 +347,3 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
         </div>
     );
 }
-
-
-
-
-
-
