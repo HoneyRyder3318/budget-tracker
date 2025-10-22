@@ -120,7 +120,7 @@ function Transactions({ transactions, onAdd, onDelete }) {
                                             {transaction.type}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-600">{transaction.category} • {transaction.source}</p>
+                                    <p className="text-sm text-gray-600">{transaction.category} â€¢ {transaction.source}</p>
                                     <p className="text-xs text-gray-500">{new Date(transaction.date).toLocaleDateString()}</p>
                                 </div>
                                 <div className="flex items-center gap-4">
