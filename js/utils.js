@@ -50,7 +50,7 @@ function SavingsActions({ item, monthly, addSavingsPayment, adjustSavings, getSa
                             onClick={handleAddPayment}
                             className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
                         >
-                            ✓ Add to Savings
+                            âœ“ Add to Savings
                         </button>
                     </div>
                     <button
@@ -86,7 +86,10 @@ function SavingsActions({ item, monthly, addSavingsPayment, adjustSavings, getSa
 }
 
 // SavingsTracker component
-function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, totalSaved, editingSavings, setEditingSavings, tempSavings, setTempSavings, setSavingsBalance, getMonthlyAmount, getSavedAmount, addSavingsPayment, adjustSavings, subscriptions }) {
+function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, totalFullAmount, totalSaved, editingSavings, setEditingSavings, tempSavings, setTempSavings, setSavingsBalance, getMonthlyAmount, getSavedAmount, addSavingsPayment, adjustSavings, subscriptions }) {
+    // Calculate thermometer percentage
+    const thermometerPercentage = totalNeededSavings > 0 ? (totalSaved / totalNeededSavings) * 100 : 0;
+    
     return (
         <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
@@ -122,7 +125,7 @@ function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, tota
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">Savings Account:</span>
+                            <span className="text-sm text-gray-600">Savings Balance (Manual):</span>
                             <span className="text-lg font-bold">${savingsBalance.toFixed(2)}</span>
                             <button
                                 onClick={() => setEditingSavings(true)}
@@ -135,19 +138,72 @@ function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, tota
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-blue-50 p-4 rounded">
-                    <p className="text-sm text-gray-600">Total Saved for Bills</p>
-                    <p className="text-2xl font-bold text-blue-600">${totalSaved.toFixed(2)}</p>
+            {/* Affiliate Ad Banner */}
+            <div className="bg-gradient-to-r from-blue-50 to-green-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                        <p className="font-bold text-lg text-gray-800">💰 Maximize Your Savings</p>
+                        <p className="text-sm text-gray-600">Earn more with a high-yield savings account</p>
+                    </div>
+                    <a 
+                        href="#" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                    >
+                        Learn More
+                    </a>
                 </div>
-                <div className="bg-orange-50 p-4 rounded">
-                    <p className="text-sm text-gray-600">Total Needed</p>
-                    <p className="text-2xl font-bold text-orange-600">${totalNeededSavings.toFixed(2)}</p>
+            </div>
+
+            {/* Thermometer Visual */}
+            <div className="bg-gradient-to-b from-gray-50 to-white border rounded-lg p-6 mb-6">
+                <div className="flex items-center gap-6">
+                    {/* Thermometer */}
+                    <div className="flex flex-col items-center">
+                        <div className="text-sm font-medium text-gray-600 mb-2">Progress</div>
+                        <div className="relative w-16 h-48 bg-gray-200 rounded-full overflow-hidden border-4 border-gray-300">
+                            <div 
+                                className={`absolute bottom-0 w-full transition-all duration-500 ${
+                                    thermometerPercentage >= 100 ? 'bg-green-500' : 
+                                    thermometerPercentage >= 80 ? 'bg-blue-500' : 
+                                    thermometerPercentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`}
+                                style={{ height: `${Math.min(thermometerPercentage, 100)}%` }}
+                            />
+                        </div>
+                        <div className="mt-2 text-center">
+                            <div className="text-2xl font-bold text-gray-800">{Math.round(thermometerPercentage)}%</div>
+                            <div className="text-xs text-gray-500">of target</div>
+                        </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-blue-50 p-4 rounded">
+                            <p className="text-sm text-gray-600">Tracked Contributions</p>
+                            <p className="text-2xl font-bold text-blue-600">${totalSaved.toFixed(2)}</p>
+                            <p className="text-xs text-gray-500 mt-1">What you've logged</p>
+                        </div>
+                        <div className="bg-orange-50 p-4 rounded">
+                            <p className="text-sm text-gray-600">Target Savings</p>
+                            <p className="text-2xl font-bold text-orange-600">${totalNeededSavings.toFixed(2)}</p>
+                            <p className="text-xs text-gray-500 mt-1">Should have by now</p>
+                        </div>
+                        <div className={`p-4 rounded ${savingsBalance >= totalNeededSavings ? 'bg-green-50' : 'bg-red-50'}`}>
+                            <p className="text-sm text-gray-600">Balance vs Target</p>
+                            <p className={`text-2xl font-bold ${savingsBalance >= totalNeededSavings ? 'text-green-600' : 'text-red-600'}`}>
+                                {savingsBalance >= totalNeededSavings ? '+' : ''}${(savingsBalance - totalNeededSavings).toFixed(2)}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">Actual vs needed</p>
+                        </div>
+                    </div>
                 </div>
-                <div className={`p-4 rounded ${savingsBalance >= totalNeededSavings ? 'bg-green-50' : 'bg-red-50'}`}>
-                    <p className="text-sm text-gray-600">Account vs Needed</p>
-                    <p className={`text-2xl font-bold ${savingsBalance >= totalNeededSavings ? 'text-green-600' : 'text-red-600'}`}>
-                        {savingsBalance >= totalNeededSavings ? '+' : ''}${(savingsBalance - totalNeededSavings).toFixed(2)}
+                
+                {/* Full amount info */}
+                <div className="mt-4 pt-4 border-t text-center">
+                    <p className="text-sm text-gray-600">
+                        Total upcoming bills: <span className="font-bold text-gray-800">${totalFullAmount.toFixed(2)}</span>
                     </p>
                 </div>
             </div>
@@ -197,3 +253,9 @@ function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, tota
         </div>
     );
 }
+
+
+
+
+
+
