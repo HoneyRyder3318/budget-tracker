@@ -87,8 +87,8 @@ function SavingsActions({ item, monthly, addSavingsPayment, adjustSavings, getSa
 
 // SavingsTracker component
 function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, totalFullAmount, totalSaved, editingSavings, setEditingSavings, tempSavings, setTempSavings, setSavingsBalance, getMonthlyAmount, getSavedAmount, addSavingsPayment, adjustSavings, subscriptions }) {
-    // Calculate thermometer percentage based on tracked contributions vs target
-    const thermometerPercentage = totalNeededSavings > 0 ? (totalSaved / totalNeededSavings) * 100 : 0;
+    // Calculate thermometer percentage based on MANUAL BALANCE vs TARGET
+    const thermometerPercentage = totalNeededSavings > 0 ? (savingsBalance / totalNeededSavings) * 100 : 0;
     
     return (
         <div className="bg-white p-6 rounded-lg shadow">
@@ -257,9 +257,3 @@ function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, tota
         </div>
     );
 }
-
-
-
-
-
-
