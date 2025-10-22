@@ -50,7 +50,7 @@ function SavingsActions({ item, monthly, addSavingsPayment, adjustSavings, getSa
                             onClick={handleAddPayment}
                             className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
                         >
-                            âœ“ Add to Savings
+                            Add to Savings
                         </button>
                     </div>
                     <button
@@ -87,62 +87,18 @@ function SavingsActions({ item, monthly, addSavingsPayment, adjustSavings, getSa
 
 // SavingsTracker component
 function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, totalFullAmount, totalSaved, editingSavings, setEditingSavings, tempSavings, setTempSavings, setSavingsBalance, getMonthlyAmount, getSavedAmount, addSavingsPayment, adjustSavings, subscriptions }) {
-    // Calculate thermometer percentage
+    // Calculate thermometer percentage based on tracked contributions vs target
     const thermometerPercentage = totalNeededSavings > 0 ? (totalSaved / totalNeededSavings) * 100 : 0;
     
     return (
         <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Savings Tracker</h2>
-                <div className="flex items-center gap-4">
-                    {editingSavings ? (
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={tempSavings}
-                                onChange={(e) => setTempSavings(e.target.value)}
-                                className="w-32 px-2 py-1 border rounded"
-                            />
-                            <button
-                                onClick={() => {
-                                    setSavingsBalance(parseFloat(tempSavings));
-                                    setEditingSavings(false);
-                                }}
-                                className="px-3 py-1 bg-green-600 text-white rounded text-sm"
-                            >
-                                Save
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setTempSavings(savingsBalance);
-                                    setEditingSavings(false);
-                                }}
-                                className="px-3 py-1 bg-gray-300 rounded text-sm"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">Savings Balance (Manual):</span>
-                            <span className="text-lg font-bold">${savingsBalance.toFixed(2)}</span>
-                            <button
-                                onClick={() => setEditingSavings(true)}
-                                className="text-blue-600 hover:text-blue-800 text-sm"
-                            >
-                                Edit
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
+            <h2 className="text-xl font-bold mb-6">Savings Tracker</h2>
 
             {/* Affiliate Ad Banner */}
             <div className="bg-gradient-to-r from-blue-50 to-green-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between">
                     <div className="flex-1">
-                        <p className="font-bold text-lg text-gray-800">💰 Maximize Your Savings</p>
+                        <p className="font-bold text-lg text-gray-800">Maximize Your Savings</p>
                         <p className="text-sm text-gray-600">Earn more with a high-yield savings account</p>
                     </div>
                     <a 
@@ -156,10 +112,10 @@ function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, tota
                 </div>
             </div>
 
-            {/* Thermometer Visual */}
+            {/* Thermometer Visual with Savings Balance */}
             <div className="bg-gradient-to-b from-gray-50 to-white border rounded-lg p-6 mb-6">
-                <div className="flex items-center gap-6">
-                    {/* Thermometer */}
+                <div className="flex items-start gap-6">
+                    {/* Left: Thermometer */}
                     <div className="flex flex-col items-center">
                         <div className="text-sm font-medium text-gray-600 mb-2">Progress</div>
                         <div className="relative w-16 h-48 bg-gray-200 rounded-full overflow-hidden border-4 border-gray-300">
@@ -178,24 +134,71 @@ function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, tota
                         </div>
                     </div>
 
-                    {/* Stats Grid */}
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-blue-50 p-4 rounded">
-                            <p className="text-sm text-gray-600">Tracked Contributions</p>
-                            <p className="text-2xl font-bold text-blue-600">${totalSaved.toFixed(2)}</p>
-                            <p className="text-xs text-gray-500 mt-1">What you've logged</p>
+                    {/* Right: Stats Grid */}
+                    <div className="flex-1 space-y-4">
+                        {/* Savings Balance Field - Prominently Displayed */}
+                        <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Your Savings Balance (Manual Entry)</p>
+                            {editingSavings ? (
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={tempSavings}
+                                        onChange={(e) => setTempSavings(e.target.value)}
+                                        className="flex-1 px-3 py-2 border-2 border-purple-300 rounded text-lg font-bold"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            setSavingsBalance(parseFloat(tempSavings));
+                                            setEditingSavings(false);
+                                        }}
+                                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                                    >
+                                        Save
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setTempSavings(savingsBalance);
+                                            setEditingSavings(false);
+                                        }}
+                                        className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between">
+                                    <span className="text-3xl font-bold text-purple-700">${savingsBalance.toFixed(2)}</span>
+                                    <button
+                                        onClick={() => setEditingSavings(true)}
+                                        className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                                    >
+                                        Update Balance
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                        <div className="bg-orange-50 p-4 rounded">
-                            <p className="text-sm text-gray-600">Target Savings</p>
-                            <p className="text-2xl font-bold text-orange-600">${totalNeededSavings.toFixed(2)}</p>
-                            <p className="text-xs text-gray-500 mt-1">Should have by now</p>
-                        </div>
-                        <div className={`p-4 rounded ${savingsBalance >= totalNeededSavings ? 'bg-green-50' : 'bg-red-50'}`}>
-                            <p className="text-sm text-gray-600">Balance vs Target</p>
-                            <p className={`text-2xl font-bold ${savingsBalance >= totalNeededSavings ? 'text-green-600' : 'text-red-600'}`}>
-                                {savingsBalance >= totalNeededSavings ? '+' : ''}${(savingsBalance - totalNeededSavings).toFixed(2)}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">Actual vs needed</p>
+
+                        {/* Other Stats */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="bg-blue-50 p-3 rounded">
+                                <p className="text-xs text-gray-600">Tracked Contributions</p>
+                                <p className="text-xl font-bold text-blue-600">${totalSaved.toFixed(2)}</p>
+                                <p className="text-xs text-gray-500 mt-1">What you've logged</p>
+                            </div>
+                            <div className="bg-orange-50 p-3 rounded">
+                                <p className="text-xs text-gray-600">Target Savings</p>
+                                <p className="text-xl font-bold text-orange-600">${totalNeededSavings.toFixed(2)}</p>
+                                <p className="text-xs text-gray-500 mt-1">Should have by now</p>
+                            </div>
+                            <div className={`p-3 rounded ${savingsBalance >= totalNeededSavings ? 'bg-green-50' : 'bg-red-50'}`}>
+                                <p className="text-xs text-gray-600">Balance vs Target</p>
+                                <p className={`text-xl font-bold ${savingsBalance >= totalNeededSavings ? 'text-green-600' : 'text-red-600'}`}>
+                                    {savingsBalance >= totalNeededSavings ? '+' : ''}${(savingsBalance - totalNeededSavings).toFixed(2)}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">Actual vs needed</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -208,6 +211,7 @@ function SavingsTracker({ savingsItems, savingsBalance, totalNeededSavings, tota
                 </div>
             </div>
 
+            {/* Individual Bill Progress */}
             <div className="space-y-3">
                 {savingsItems.map(item => {
                     const saved = getSavedAmount(item);
