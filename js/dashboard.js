@@ -99,7 +99,7 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
 
     const savingsItems = allRecurring.filter(item => (item.frequency || 'Monthly') !== 'Monthly');
     
-    // SIMPLIFIED CALCULATION: What should be saved by now
+    // MONTHLY TARGET CALCULATION: Cumulative monthly targets that increase on the 1st
     const calculateShouldHaveSaved = (item) => {
         const frequency = item.frequency || 'Monthly';
         const frequencyMonths = { 'Quarterly': 3, 'Semi-Annual': 6, 'Annual': 12 }[frequency];
@@ -109,22 +109,23 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
         const nextPaymentDate = new Date(item.nextPayment);
         const now = new Date();
         
-        // Days until payment
-        const daysUntil = Math.ceil((nextPaymentDate - now) / (1000 * 60 * 60 * 24));
+        // If payment is overdue, should have full amount
+        if (nextPaymentDate <= now) return parseFloat(item.amount);
         
-        // If payment is overdue or very soon, should have full amount
-        if (daysUntil <= 0) return parseFloat(item.amount);
+        // Calculate months elapsed in this cycle
+        // Assume last payment was frequencyMonths ago from next payment date
+        const lastPaymentDate = new Date(nextPaymentDate);
+        lastPaymentDate.setMonth(lastPaymentDate.getMonth() - frequencyMonths);
         
-        // Convert days to months (rough estimate)
-        const monthsUntil = daysUntil / 30;
+        // Count whole months since last payment
+        const yearsDiff = now.getFullYear() - lastPaymentDate.getFullYear();
+        const monthsDiff = now.getMonth() - lastPaymentDate.getMonth();
+        const monthsElapsed = Math.max(0, yearsDiff * 12 + monthsDiff);
         
-        // Months elapsed in this cycle
-        const monthsElapsed = Math.max(0, frequencyMonths - monthsUntil);
-        
-        // Should have saved = monthly amount × months elapsed
+        // Target = monthly amount × whole months elapsed
         const shouldHave = monthlyAmount * monthsElapsed;
         
-        // Return at least 0, max the full amount
+        // Cap at full bill amount
         return Math.max(0, Math.min(shouldHave, parseFloat(item.amount)));
     };
     
