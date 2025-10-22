@@ -107,7 +107,7 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
         
         const monthlyAmount = parseFloat(item.amount) / frequencyMonths;
         const nextPaymentDate = new Date(item.nextPayment);
-        const now = new Date();
+        const now = window.testDate || new Date(); // Use test date if set
         
         // If payment is overdue, should have full amount
         if (nextPaymentDate <= now) return parseFloat(item.amount);
@@ -344,6 +344,75 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
                     </label>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">Export your data regularly to keep backups!</p>
+            </div>
+
+            {/* TEST CONTROLS - Remove before production */}
+            <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 shadow">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-xl font-bold text-yellow-800">🧪 Date Testing Controls</h2>
+                        <p className="text-sm text-yellow-700">Test how savings targets change on different dates</p>
+                    </div>
+                    {window.testDate && (
+                        <span className="px-3 py-1 bg-yellow-600 text-white rounded font-bold">
+                            TEST MODE ACTIVE
+                        </span>
+                    )}
+                </div>
+                <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                        <button 
+                            onClick={() => {
+                                window.testDate = null;
+                                window.location.reload();
+                            }}
+                            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium"
+                        >
+                            ✓ Real Date (Today)
+                        </button>
+                        <button 
+                            onClick={() => {
+                                window.testDate = new Date('2025-11-01');
+                                window.location.reload();
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                            Nov 1, 2025
+                        </button>
+                        <button 
+                            onClick={() => {
+                                window.testDate = new Date('2025-12-01');
+                                window.location.reload();
+                            }}
+                            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                            Dec 1, 2025
+                        </button>
+                        <button 
+                            onClick={() => {
+                                window.testDate = new Date('2026-01-01');
+                                window.location.reload();
+                            }}
+                            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                        >
+                            Jan 1, 2026
+                        </button>
+                        <button 
+                            onClick={() => {
+                                window.testDate = new Date('2026-02-01');
+                                window.location.reload();
+                            }}
+                            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                            Feb 1, 2026
+                        </button>
+                    </div>
+                    <div className="bg-white rounded p-3 border border-yellow-300">
+                        <p className="text-sm text-gray-700">
+                            <strong>Current simulated date:</strong> {window.testDate ? window.testDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Real date (not testing)'}
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     );
