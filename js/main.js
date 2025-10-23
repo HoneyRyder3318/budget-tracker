@@ -199,7 +199,7 @@ function BudgetTracker() {
     return (
         <div className="min-h-screen bg-gray-100">
             <div className="bg-blue-600 text-white p-4 shadow-md">
-                <h1 className="text-3xl font-bold">ðŸ’° Budget Tracker</h1>
+                <h1 className="text-3xl font-bold">Privelly</h1>
             </div>
             
             <div className="bg-white shadow-sm sticky top-0 z-10">
