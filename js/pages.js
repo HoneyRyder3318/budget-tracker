@@ -120,7 +120,7 @@ function Transactions({ transactions, onAdd, onDelete }) {
                                             {transaction.type}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-600">{transaction.category} - {transaction.source}</p>
+                                    <p className="text-sm text-gray-600">{transaction.category} Ã¢â‚¬Â¢ {transaction.source}</p>
                                     <p className="text-xs text-gray-500">{new Date(transaction.date).toLocaleDateString()}</p>
                                 </div>
                                 <div className="flex items-center gap-4">
@@ -330,15 +330,91 @@ function Bills({ bills, onAdd, onEdit, onDelete, onToggleFlag, getMonthlyAmount,
     );
 }
 
-function Budgets({ budgets, onAdd, onEdit, onDelete, getCategorySpending }) {
+function Budgets({ budgets, onAdd, onEdit, onDelete, transactions, subscriptions, bills, getMonthlyAmount }) {
+    // Get current month as default
+    const getCurrentMonth = () => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    };
+    
+    const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+    
+    // Get unique months from transactions
+    const getAvailableMonths = () => {
+        const months = transactions.map(t => {
+            const date = new Date(t.date);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        });
+        const uniqueMonths = [...new Set(months)].sort().reverse();
+        
+        // Always include current month even if no transactions
+        const currentMonth = getCurrentMonth();
+        if (!uniqueMonths.includes(currentMonth)) {
+            uniqueMonths.unshift(currentMonth);
+        }
+        
+        return uniqueMonths;
+    };
+    
+    const availableMonths = getAvailableMonths();
+    
+    // Format month for display
+    const formatMonthDisplay = (monthStr) => {
+        const [year, month] = monthStr.split('-');
+        const date = new Date(year, month - 1);
+        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    };
+    
+    // Calculate spending for a specific category in the selected month
+    const getCategorySpendingForMonth = (category) => {
+        // Filter transactions by selected month
+        const monthTransactions = transactions.filter(t => {
+            const date = new Date(t.date);
+            const transactionMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            return transactionMonth === selectedMonth;
+        });
+        
+        const transactionSpending = monthTransactions
+            .filter(t => t.type === 'expense' && t.category === category)
+            .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+        
+        // Add monthly portion of subscriptions and bills (regardless of month)
+        const subscriptionSpending = subscriptions
+            .filter(s => s.category === category)
+            .reduce((sum, s) => sum + parseFloat(getMonthlyAmount(s.amount, s.frequency)), 0);
+        
+        const billSpending = bills
+            .filter(b => b.category === category)
+            .reduce((sum, b) => sum + parseFloat(getMonthlyAmount(b.amount, b.frequency)), 0);
+        
+        return transactionSpending + subscriptionSpending + billSpending;
+    };
+    
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Budgets</h2>
-                <button onClick={onAdd} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                    <PlusCircle size={20} />
-                    Add Budget
-                </button>
+            {/* Header with Month Selector */}
+            <div className="bg-white p-4 rounded-lg shadow">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold">Budgets</h2>
+                    <div className="flex items-center gap-3">
+                        <label className="text-sm font-medium text-gray-600">Viewing:</label>
+                        <select 
+                            value={selectedMonth} 
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            className="px-4 py-2 border rounded-lg font-medium"
+                        >
+                            {availableMonths.map(month => (
+                                <option key={month} value={month}>
+                                    {formatMonthDisplay(month)}
+                                </option>
+                            ))}
+                        </select>
+                        <button onClick={onAdd} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            <PlusCircle size={20} />
+                            Add Budget
+                        </button>
+                    </div>
+                </div>
             </div>
             
             <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -347,7 +423,7 @@ function Budgets({ budgets, onAdd, onEdit, onDelete, getCategorySpending }) {
                 ) : (
                     <div className="divide-y">
                         {budgets.map(budget => {
-                            const spent = getCategorySpending(budget.category);
+                            const spent = getCategorySpendingForMonth(budget.category);
                             const percentage = (spent / budget.limit) * 100;
                             const remaining = budget.limit - spent;
                             
@@ -391,3 +467,9 @@ function Budgets({ budgets, onAdd, onEdit, onDelete, getCategorySpending }) {
         </div>
     );
 }
+
+
+
+
+
+
