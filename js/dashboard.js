@@ -188,41 +188,6 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
                 </div>
             </div>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-gray-600 text-sm">Income ({formatMonthDisplay(selectedMonth)})</p>
-                            <p className="text-2xl font-bold text-green-600">${monthlyIncome.toFixed(2)}</p>
-                        </div>
-                        <TrendingUp className="text-green-600" size={32} />
-                    </div>
-                </div>
-                
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-gray-600 text-sm">Expenses ({formatMonthDisplay(selectedMonth)})</p>
-                            <p className="text-2xl font-bold text-red-600">${monthlyExpenses.toFixed(2)}</p>
-                        </div>
-                        <TrendingDown className="text-red-600" size={32} />
-                    </div>
-                </div>
-                
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-gray-600 text-sm">Balance ({formatMonthDisplay(selectedMonth)})</p>
-                            <p className={`text-2xl font-bold ${monthlyBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                ${monthlyBalance.toFixed(2)}
-                            </p>
-                        </div>
-                        <DollarSign className={monthlyBalance >= 0 ? 'text-green-600' : 'text-red-600'} size={32} />
-                    </div>
-                </div>
-            </div>
-
             {/* Recurring Payments Summary */}
             <div className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-xl font-bold mb-4">Recurring Payments</h2>
@@ -312,6 +277,27 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* Savings Tracker */}
+            {savingsItems.length > 0 && (
+                <SavingsTracker 
+                    savingsItems={savingsItems}
+                    savingsBalance={savingsBalance}
+                    totalNeededSavings={totalNeededSavings}
+                    totalFullAmount={totalFullAmount}
+                    totalSaved={totalSaved}
+                    editingSavings={editingSavings}
+                    setEditingSavings={setEditingSavings}
+                    tempSavings={tempSavings}
+                    setTempSavings={setTempSavings}
+                    setSavingsBalance={setSavingsBalance}
+                    getMonthlyAmount={getMonthlyAmount}
+                    getSavedAmount={getSavedAmount}
+                    addSavingsPayment={addSavingsPayment}
+                    adjustSavings={adjustSavings}
+                    subscriptions={subscriptions}
+                />
             )}
 
             {/* Spending by Category */}
@@ -475,3 +461,9 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
         </div>
     );
 }
+
+
+
+
+
+
