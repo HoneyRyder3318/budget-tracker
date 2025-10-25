@@ -232,6 +232,8 @@ function BudgetTracker() {
                         importData={importData}
                         addSavingsPayment={addSavingsPayment}
                         adjustSavings={adjustSavings}
+                        deleteSubscription={deleteSubscription}
+                        toggleSubscriptionFlag={toggleSubscriptionFlag}
                     />
                 )}
                 {activeTab === 'transactions' && (
