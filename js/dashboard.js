@@ -1,9 +1,10 @@
 // Dashboard component with all summary views and month filtering
 
-function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance, setSavingsBalance, getCategorySpending, exportData, importData, getMonthlyAmount, getSavedAmount, addSavingsPayment, adjustSavings }) {
+function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance, setSavingsBalance, getCategorySpending, exportData, importData, getMonthlyAmount, getSavedAmount, addSavingsPayment, adjustSavings, deleteSubscription, toggleSubscriptionFlag }) {
     const [editingSavings, setEditingSavings] = useState(false);
     const [tempSavings, setTempSavings] = useState(savingsBalance);
     const [testDate, setTestDate] = useState(null); // For date testing
+    const [dismissedReminders, setDismissedReminders] = useState(new Set()); // Track "remind me again" dismissals
     
     // Get current month as default
     const getCurrentMonth = () => {
@@ -123,7 +124,7 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
         const monthsDiff = now.getMonth() - lastPaymentDate.getMonth();
         const monthsElapsed = Math.max(0, yearsDiff * 12 + monthsDiff);
         
-        // Target = monthly amount × whole months elapsed
+        // Target = monthly amount Ã— whole months elapsed
         const shouldHave = monthlyAmount * monthsElapsed;
         
         // Cap at full bill amount
@@ -143,6 +144,25 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
         const [year, month] = monthStr.split('-');
         const date = new Date(year, month - 1);
         return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    };
+
+    // Get flagged subscriptions due in next 7 days (excluding dismissed ones)
+    const flaggedSubscriptionsDueSoon = subscriptions.filter(sub => {
+        if (!sub.flaggedForCancellation || dismissedReminders.has(sub.id)) return false;
+        const daysUntil = Math.ceil((new Date(sub.nextPayment) - new Date()) / (1000 * 60 * 60 * 24));
+        return daysUntil >= 0 && daysUntil <= 7;
+    });
+
+    const handleCancelled = (id) => {
+        deleteSubscription(id);
+    };
+
+    const handleRemindAgain = (id) => {
+        setDismissedReminders(prev => new Set([...prev, id]));
+    };
+
+    const handleKeepIt = (id) => {
+        toggleSubscriptionFlag(id);
     };
 
     return (
@@ -167,6 +187,55 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
                     </div>
                 </div>
             </div>
+
+            {/* Flagged Subscriptions Alert */}
+            {flaggedSubscriptionsDueSoon.length > 0 && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow">
+                    <div className="flex items-start">
+                        <AlertCircle className="text-red-500 mr-3 flex-shrink-0 mt-1" size={24} />
+                        <div className="flex-1">
+                            <h3 className="font-bold text-red-800 mb-3">Flagged Subscriptions Due Soon</h3>
+                            <div className="space-y-4">
+                                {flaggedSubscriptionsDueSoon.map(sub => {
+                                    const daysUntil = Math.ceil((new Date(sub.nextPayment) - new Date()) / (1000 * 60 * 60 * 24));
+                                    return (
+                                        <div key={sub.id} className="bg-white p-3 rounded border border-red-200">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <p className="font-bold">{sub.name}</p>
+                                                    <p className="text-sm text-gray-600">
+                                                        ${sub.amount} - Due in {daysUntil === 0 ? 'today' : `${daysUntil} day${daysUntil > 1 ? 's' : ''}`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 flex-wrap">
+                                                <button
+                                                    onClick={() => handleCancelled(sub.id)}
+                                                    className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                                                >
+                                                    I cancelled it - delete
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRemindAgain(sub.id)}
+                                                    className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                                                >
+                                                    Remind me again
+                                                </button>
+                                                <button
+                                                    onClick={() => handleKeepIt(sub.id)}
+                                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                                >
+                                                    I'm keeping it - unflag
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -351,7 +420,7 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
             <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 shadow">
                 <div className="flex items-center justify-between mb-4">
                     <div>
-                        <h2 className="text-xl font-bold text-yellow-800">🧪 Date Testing Controls</h2>
+                        <h2 className="text-xl font-bold text-yellow-800">ðŸ§ª Date Testing Controls</h2>
                         <p className="text-sm text-yellow-700">Test how savings targets change on different dates</p>
                     </div>
                     {testDate && (
@@ -366,7 +435,7 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
                             onClick={() => setTestDate(null)}
                             className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium"
                         >
-                            ✓ Real Date (Today)
+                            âœ“ Real Date (Today)
                         </button>
                         <button 
                             onClick={() => setTestDate(new Date('2025-11-01'))}
@@ -403,3 +472,9 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
         </div>
     );
 }
+
+
+
+
+
+
