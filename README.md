@@ -182,6 +182,6 @@ Created with assistance from Claude (Anthropic)
 
 ---
 
-**Version**: 3.1.0
+**Version**: 3.1.2
 **Last Updated**: October 2025  
 **Status**: Active Development
