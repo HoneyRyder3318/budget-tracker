@@ -2,6 +2,30 @@
 
 All notable changes to the Budget Tracker project will be documented in this file.
 
+[3.1.2] - 2025-10-22
+Added
+
+Savings Tracker Redesign: Complete visual overhaul with thermometer progress indicator
+Monthly Savings Targets: Whole month calculations that increase on the 1st of each month
+Budget Tab Month Filtering: Budget tab now has month selector dropdown like Dashboard
+Date Testing Controls: Developer tools for testing savings calculations on different dates
+Affiliate Ad Space: Added placeholder banner in Savings Tracker for monetization
+
+Fixed
+
+Fixed Budget tab showing all-time spending instead of monthly spending
+Fixed "Add to Savings" button character artifact
+Fixed Target Savings calculation showing $0
+Fixed thermometer not tracking Manual Balance correctly
+Fixed character encoding issues (bullet points and emojis displaying as garbled text)
+
+Changed
+
+App title updated to "Privelly" in browser tab and header
+Savings Tracker now prominently displays Manual Balance in purple box
+Budget component completely rewritten with month filtering support
+Savings targets now use cumulative monthly calculations instead of daily prorated amounts
+
  ## [3.1.1] - 2025-10-20
 
    ### Fixed
