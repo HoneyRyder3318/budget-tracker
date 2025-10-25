@@ -2,6 +2,24 @@
 
 All notable changes to the Budget Tracker project will be documented in this file.
 
+[3.2.0] - 2025-10-25
+
+Added
+- Flagged Subscription Reminder System**: Proactive cancellation management
+  - Alert banner appears 7 days before payment date for flagged subscriptions
+  - Three action buttons: "I cancelled it - delete", "Remind me again", "I'm keeping it - unflag"
+  - "Remind me again" dismisses alert until next payment cycle
+  - Dismissed reminders tracked per subscription to avoid repeated nagging
+- Combined Upcoming Payments Section**: Unified view of all upcoming payments
+  - Flagged subscriptions shown at top with action buttons
+  - Regular upcoming payments (next 7 days) shown below for reference
+  - Cleaner, more organized dashboard layout
+
+Changed
+- Tab order reordered: Dashboard, Subscriptions, Bills, Budgets, Transactions
+- Upcoming Payments section now includes both alerts and informational upcoming payments
+- Flagged subscriptions get visual priority in upcoming payments display
+
 [3.1.2] - 2025-10-22
 Added
 
