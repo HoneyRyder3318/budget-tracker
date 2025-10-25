@@ -390,6 +390,23 @@ function Budgets({ budgets, onAdd, onEdit, onDelete, transactions, subscriptions
         return transactionSpending + subscriptionSpending + billSpending;
     };
     
+    // Calculate income, expenses, and balance for selected month
+    const filteredTransactions = transactions.filter(t => {
+        const date = new Date(t.date);
+        const transactionMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        return transactionMonth === selectedMonth;
+    });
+    
+    const monthlyIncome = filteredTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    const monthlyExpenses = filteredTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    const monthlyBalance = monthlyIncome - monthlyExpenses;
+    
     return (
         <div className="space-y-4">
             {/* Header with Month Selector */}
@@ -413,6 +430,41 @@ function Budgets({ budgets, onAdd, onEdit, onDelete, transactions, subscriptions
                             <PlusCircle size={20} />
                             Add Budget
                         </button>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-gray-600 text-sm">Income ({formatMonthDisplay(selectedMonth)})</p>
+                            <p className="text-2xl font-bold text-green-600">${monthlyIncome.toFixed(2)}</p>
+                        </div>
+                        <TrendingUp className="text-green-600" size={32} />
+                    </div>
+                </div>
+                
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-gray-600 text-sm">Expenses ({formatMonthDisplay(selectedMonth)})</p>
+                            <p className="text-2xl font-bold text-red-600">${monthlyExpenses.toFixed(2)}</p>
+                        </div>
+                        <TrendingDown className="text-red-600" size={32} />
+                    </div>
+                </div>
+                
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-gray-600 text-sm">Balance ({formatMonthDisplay(selectedMonth)})</p>
+                            <p className={`text-2xl font-bold ${monthlyBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ${monthlyBalance.toFixed(2)}
+                            </p>
+                        </div>
+                        <DollarSign className={monthlyBalance >= 0 ? 'text-green-600' : 'text-red-600'} size={32} />
                     </div>
                 </div>
             </div>
@@ -467,9 +519,3 @@ function Budgets({ budgets, onAdd, onEdit, onDelete, transactions, subscriptions
         </div>
     );
 }
-
-
-
-
-
-
