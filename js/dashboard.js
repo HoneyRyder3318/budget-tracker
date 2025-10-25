@@ -188,55 +188,6 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
                 </div>
             </div>
 
-            {/* Flagged Subscriptions Alert */}
-            {flaggedSubscriptionsDueSoon.length > 0 && (
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow">
-                    <div className="flex items-start">
-                        <AlertCircle className="text-red-500 mr-3 flex-shrink-0 mt-1" size={24} />
-                        <div className="flex-1">
-                            <h3 className="font-bold text-red-800 mb-3">Flagged Subscriptions Due Soon</h3>
-                            <div className="space-y-4">
-                                {flaggedSubscriptionsDueSoon.map(sub => {
-                                    const daysUntil = Math.ceil((new Date(sub.nextPayment) - new Date()) / (1000 * 60 * 60 * 24));
-                                    return (
-                                        <div key={sub.id} className="bg-white p-3 rounded border border-red-200">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <p className="font-bold">{sub.name}</p>
-                                                    <p className="text-sm text-gray-600">
-                                                        ${sub.amount} - Due in {daysUntil === 0 ? 'today' : `${daysUntil} day${daysUntil > 1 ? 's' : ''}`}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 flex-wrap">
-                                                <button
-                                                    onClick={() => handleCancelled(sub.id)}
-                                                    className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-                                                >
-                                                    I cancelled it - delete
-                                                </button>
-                                                <button
-                                                    onClick={() => handleRemindAgain(sub.id)}
-                                                    className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
-                                                >
-                                                    Remind me again
-                                                </button>
-                                                <button
-                                                    onClick={() => handleKeepIt(sub.id)}
-                                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                                                >
-                                                    I'm keeping it - unflag
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white p-6 rounded-lg shadow">
@@ -289,25 +240,77 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
                 </div>
             </div>
 
-            {/* Upcoming Payments */}
-            {upcomingPayments.length > 0 && (
-                <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
-                    <div className="flex items-start">
-                        <AlertCircle className="text-orange-500 mr-3 flex-shrink-0" size={24} />
-                        <div className="flex-1">
-                            <h3 className="font-bold text-orange-800">Upcoming Payments (Next 7 Days)</h3>
-                            <div className="mt-2 space-y-2">
-                                {upcomingPayments.map(item => (
-                                    <div key={item.id} className="flex justify-between text-sm">
-                                        <span>{item.name || item.description}</span>
-                                        <span className="font-medium">
-                                            ${item.amount} - {item.daysUntil === 0 ? 'Today' : `in ${item.daysUntil} day${item.daysUntil > 1 ? 's' : ''}`}
-                                        </span>
-                                    </div>
-                                ))}
+            {/* Upcoming Payments - Combined */}
+            {(flaggedSubscriptionsDueSoon.length > 0 || upcomingPayments.length > 0) && (
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <h2 className="text-xl font-bold mb-4">Upcoming Payments (Next 7 Days)</h2>
+                    
+                    {/* Flagged Subscriptions */}
+                    {flaggedSubscriptionsDueSoon.length > 0 && (
+                        <div className="mb-4">
+                            <h3 className="font-semibold text-red-700 mb-3 flex items-center">
+                                <AlertCircle className="mr-2" size={20} />
+                                Flagged for Cancellation
+                            </h3>
+                            <div className="space-y-3">
+                                {flaggedSubscriptionsDueSoon.map(sub => {
+                                    const daysUntil = Math.ceil((new Date(sub.nextPayment) - new Date()) / (1000 * 60 * 60 * 24));
+                                    return (
+                                        <div key={sub.id} className="bg-red-50 p-3 rounded border border-red-200">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <p className="font-bold">{sub.name}</p>
+                                                    <p className="text-sm text-gray-600">
+                                                        ${sub.amount} - Due {daysUntil === 0 ? 'today' : `in ${daysUntil} day${daysUntil > 1 ? 's' : ''}`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 flex-wrap">
+                                                <button
+                                                    onClick={() => handleCancelled(sub.id)}
+                                                    className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                                                >
+                                                    I cancelled it - delete
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRemindAgain(sub.id)}
+                                                    className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                                                >
+                                                    Remind me again
+                                                </button>
+                                                <button
+                                                    onClick={() => handleKeepIt(sub.id)}
+                                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                                >
+                                                    I'm keeping it - unflag
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
-                    </div>
+                    )}
+                    
+                    {/* Regular Upcoming Payments */}
+                    {upcomingPayments.filter(item => !item.flaggedForCancellation || dismissedReminders.has(item.id)).length > 0 && (
+                        <div>
+                            {flaggedSubscriptionsDueSoon.length > 0 && <hr className="my-4" />}
+                            <h3 className="font-semibold text-gray-700 mb-3">All Upcoming</h3>
+                            <div className="space-y-2">
+                                {upcomingPayments
+                                    .filter(item => !item.flaggedForCancellation || dismissedReminders.has(item.id))
+                                    .map(item => (
+                                        <div key={item.id} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
+                                            <span>{item.name || item.description}</span>
+                                            <span className="font-medium">
+                                                ${item.amount} - {item.daysUntil === 0 ? 'Today' : `in ${item.daysUntil} day${item.daysUntil > 1 ? 's' : ''}`}
+                                            </span>
+                                        </div>
+                                    ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -472,9 +475,3 @@ function Dashboard({ transactions, subscriptions, bills, budgets, savingsBalance
         </div>
     );
 }
-
-
-
-
-
-
