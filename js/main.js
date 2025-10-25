@@ -204,7 +204,7 @@ function BudgetTracker() {
             
             <div className="bg-white shadow-sm sticky top-0 z-10">
                 <div className="flex border-b">
-                    {['dashboard', 'transactions', 'subscriptions', 'bills', 'budgets'].map(tab => (
+                    {['dashboard', 'subscriptions', 'bills', 'budgets', 'transactions'].map(tab => (
                         <button 
                             key={tab} 
                             onClick={() => setActiveTab(tab)} 
@@ -297,9 +297,3 @@ function BudgetTracker() {
 // Render the app
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<BudgetTracker />);
-
-
-
-
-
-
